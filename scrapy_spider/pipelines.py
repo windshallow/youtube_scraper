@@ -9,6 +9,7 @@
 from sqlalchemy.orm import sessionmaker
 from scrapy_spider.models import QuoteDB, db_connect, create_table
 
+
 class ScrapySpiderPipeline(object):
     def __init__(self):
         """

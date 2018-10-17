@@ -2,3 +2,6 @@ Scrapy==1.4.0
 service-identity==17.0.0
 simplegeneric==0.8.1
 SQLAlchemy==1.1.14
+
+Twisted==18.7.0
+pytz==2018.5
