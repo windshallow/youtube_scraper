@@ -1,8 +1,5 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-# vim:fenc=utf-8
-#
-# Copyright © 2017-09-22 michael_yin
 #
 
 from sqlalchemy import create_engine, Column, Table, ForeignKey, MetaData
@@ -36,3 +33,24 @@ class QuoteDB(DeclarativeBase):
     quote = Column('quote', Text())
     author = Column('author', String(100))
 
+
+class YoutubeCelebrityInfoDB(DeclarativeBase):
+    __tablename__ = "youtube_celebrity_info_table"
+
+    id = Column(Integer, primary_key=True)
+    keyword = Column('keyword', String(100))
+    name = Column('name', String(100))
+    homepage_link = Column('homepage_link', String(100))
+    description = Column('description', Text())
+    mail_string = Column('mail_string', String(100))
+    link_string = Column('link_string', String(100))
+    # subscriber_count = Column('subscriber_count', String(100))
+    # view_count = Column('view_count', String(100))
+    # joined_date = Column('joined_date', String(100))
+    country = Column('country', String(100))
+    # other_contact = Column('other_contact', String(100))
+    google = Column('google', String(100))
+    twitter = Column('twitter', String(100))
+    facebook = Column('facebook', String(100))
+    instagram = Column('instagram', String(100))
+    website = Column('website', String(100))

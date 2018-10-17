@@ -33,16 +33,19 @@ class YoutubeCelebrityInfoSpider(scrapy.Spider):
             'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 100,
             'scrapy_spider.middlewares.CustomRetryMiddleware': 1000,
             'scrapy_spider.middlewares.RotateUserAgentMiddleware': 543,
-            'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-            'scrapy_crawlera.CrawleraMiddleware': 610
+            # 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 666,
+            # 'scrapy_crawlera.CrawleraMiddleware': 610
         },
-        'CRAWLERA_ENABLED': True,
-        'CRAWLERA_APIKEY': '854fbe371c13433b871ece7923163875',
+        # 'CRAWLERA_ENABLED': True,
+        # 'CRAWLERA_APIKEY': '854fbe371c13433b871ece7923163875',
 
-        'FEED_EXPORT_FIELDS': [
-            'name', 'subscriber_count', 'view_count', 'mail_string', 'link_string', 'google', 'twitter', 'facebook',
-            'instagram', 'website', 'country', 'joined_date', 'description', 'other_contact', 'homepage_link', 'keyword'
-        ]
+        # 'FEED_EXPORT_FIELDS': [
+        #     'name', 'subscriber_count', 'view_count', 'mail_string', 'link_string', 'google', 'twitter', 'facebook',
+        #     'instagram', 'website', 'country', 'joined_date', 'description', 'other_contact', 'homepage_link', 'keyword'
+        # ]
+        'ITEM_PIPELINES': {
+            'scrapy_spider.pipelines.YoutubeCelebrityInfoPipeline': 300,
+        }
     }
 
     def __init__(self, *args, **kwargs):
