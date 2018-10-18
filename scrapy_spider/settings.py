@@ -98,7 +98,7 @@ ITEM_PIPELINES = {
 # )
 
 CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}".format(
-    drivername="postgres",  # postgres, mysql
+    drivername="postgresql+psycopg2",  # postgres, mysql
     user="admin",
     passwd="",
     host="localhost",

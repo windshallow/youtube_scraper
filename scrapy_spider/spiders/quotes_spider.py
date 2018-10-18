@@ -7,6 +7,11 @@ class QuotesSpiderSpider(scrapy.Spider):
     name = 'quotes_spider'
     allowed_domains = ['quotes.toscrape.com']
     start_urls = ['http://quotes.toscrape.com/']
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'scrapy_spider.pipelines.ScrapySpiderPipeline': 300,
+        }
+    }
 
     def parse(self, response):
         quotes = response.xpath("//div[@class='quote']")
