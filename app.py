@@ -2,6 +2,7 @@
 
 from flask import Flask, request
 from celery import Celery
+from crawl import domain_crawl
 
 
 app = Flask(__name__)
@@ -18,11 +19,20 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 
+@app.route('/')
+def index():
+    return 'hello world'
+
+
 # ----------------------------------------------- 通过 flask 的 /celery_test 接口调用celery 的 add 任务
 # cd ~/Desktop/funny/spider_flask_api/flask_learn
 # celery worker -A tasks.app -l INFO    开启worker，监听队列， -A参数指向 Celery类的实例的位置
 # python app.py                         另开终端，同目录下启动flask服务
 # 打开浏览器访问： http://127.0.0.1:5000/celery_test   即可触发celery任务
+
+# my macBookPro
+# cd ~/funny/youtube_scraper
+# celery worker -A app.celery -l INFO
 
 @celery.task
 def add(x, y):
@@ -50,7 +60,7 @@ def calculate():
 
 @celery.task()
 def crawl_domain(urls):
-    from crawl import domain_crawl
+    # from crawl import domain_crawl
     return domain_crawl(urls)
 
 
@@ -58,6 +68,7 @@ def crawl_domain(urls):
 def crawler():
     urls = 'http://quotes.toscrape.com/'
     crawl_domain.delay(urls)
+    print '运行结束'
     return '开始爬虫'
 
 

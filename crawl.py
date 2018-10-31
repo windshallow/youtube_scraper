@@ -3,7 +3,9 @@
 
 from multiprocessing import Process
 from scrapy.crawler import CrawlerProcess
-from scrapy.conf import settings
+# from scrapy import settings
+# from scrapy_spider import settings
+from scrapy.utils.project import get_project_settings
 from scrapy_spider.spiders.quotes_spider import QuotesSpiderSpider
 # from models import Domain  # 数据库 orm
 
@@ -11,7 +13,7 @@ from scrapy_spider.spiders.quotes_spider import QuotesSpiderSpider
 class DomainCrawlerScript(object):
 
     def __init__(self):
-        self.crawler = CrawlerProcess(settings)
+        self.crawler = CrawlerProcess(get_project_settings())
         # self.crawler.install()
         # self.crawler.configure()
 
@@ -24,6 +26,7 @@ class DomainCrawlerScript(object):
         # for page in domain.pages.all():
         #     urls.append(page.url())
         # urls = ['http://quotes.toscrape.com/']
+        print urls, type(urls)
         self.crawler.crawl(QuotesSpiderSpider(urls))
         self.crawler.start()
         self.crawler.stop()
@@ -33,10 +36,10 @@ class DomainCrawlerScript(object):
     #     p.start()
     #     p.join()
 
-    def crawl(self, urls):
-        p = Process(target=self._crawl, args=[urls])
-        p.start()
-        p.join()
+    # def crawl(self, urls):
+    #     p = Process(target=self._crawl, args=[urls])
+    #     p.start()
+    #     p.join()
 
 
 crawler = DomainCrawlerScript()
@@ -46,4 +49,6 @@ crawler = DomainCrawlerScript()
 #     crawler.crawl(domain_pk)
 
 def domain_crawl(urls):
-    crawler.crawl(urls)
+    # crawler.crawl(urls)
+    crawler._crawl(urls)
+
