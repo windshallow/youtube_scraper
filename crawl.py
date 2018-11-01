@@ -26,7 +26,7 @@ class DomainCrawlerScript(object):
         # for page in domain.pages.all():
         #     urls.append(page.url())
         # urls = ['http://quotes.toscrape.com/']
-        print urls, type(urls)
+        print '======== 1 ========', urls, type(urls)
         self.crawler.crawl(QuotesSpiderSpider(urls))
         self.crawler.start()
         self.crawler.stop()
