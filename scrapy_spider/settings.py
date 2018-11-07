@@ -97,9 +97,19 @@ ITEM_PIPELINES = {
 #     db_name="quote_toscrape",
 # )
 
+# CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}".format(
+#     drivername="postgresql+psycopg2",  # postgres, mysql
+#     user="admin",
+#     passwd="",
+#     host="localhost",
+#     port="5432",
+#     db_name="admin",
+# )
+
+# MacBook Pro
 CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}".format(
     drivername="postgresql+psycopg2",  # postgres, mysql
-    user="admin",
+    user="linrenwei",
     passwd="",
     host="localhost",
     port="5432",

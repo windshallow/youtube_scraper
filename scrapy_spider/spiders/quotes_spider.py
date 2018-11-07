@@ -4,6 +4,11 @@ from scrapy_spider.items import QuoteItem
 
 
 class QuotesSpiderSpider(scrapy.Spider):
+
+    """
+    scrapy crawl quotes_spider -a url=http://quotes.toscrape.com/
+    """
+
     name = 'quotes_spider'
     allowed_domains = ['quotes.toscrape.com']
     # start_urls = ['http://quotes.toscrape.com/']
@@ -15,7 +20,8 @@ class QuotesSpiderSpider(scrapy.Spider):
 
     def __init__(self, url, *args, **kwargs):
         super(QuotesSpiderSpider, self).__init__(*args, **kwargs)
-        self.start_urls = url  # list
+        # self.start_urls = url  # list
+        self.start_urls = ['http://quotes.toscrape.com/']
 
     def parse(self, response):
         quotes = response.xpath("//div[@class='quote']")
