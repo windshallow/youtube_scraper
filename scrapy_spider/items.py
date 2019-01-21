@@ -33,3 +33,15 @@ class YoutubeCelebrityInfoItem(Item):
     facebook = Field()
     instagram = Field()
     website = Field()
+
+
+class MobileUserAgentItem(Item):
+    """
+    移动端用户代理
+    """
+
+    user_agent = Field()
+    software = Field()
+    software_type = Field()
+    os = Field()
+    popularity = Field()

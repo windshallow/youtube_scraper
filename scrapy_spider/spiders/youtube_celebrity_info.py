@@ -44,7 +44,7 @@ class YoutubeCelebrityInfoSpider(scrapy.Spider):
         #     'instagram', 'website', 'country', 'joined_date', 'description', 'other_contact', 'homepage_link', 'keyword'
         # ]
         'ITEM_PIPELINES': {
-            'scrapy_spider.pipelines.YoutubeCelebrityInfoPipeline': 300,
+            # 'scrapy_spider.pipelines.YoutubeCelebrityInfoPipeline': 300,
         }
     }
 
