@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-© 2018 QYT Technology
-Authored by: Lin Renwei (931798845@qq.com)
-
-"""
 import scrapy
 from urllib import quote
 from scrapy_spider.items import MobileUserAgentItem

@@ -104,3 +104,9 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):   # 循环用户代理中�
 
     # http://www.useragentstring.com/pages/useragentstring.php  # 从这个网站爬下来的浏览器代理
     user_agent_list = ua_list.UA_LIST                           # user_agent_list 必须是一个列表字符串对象
+
+
+# class UserAgentmiddleware(UserAgentMiddleware):
+#     def process_request(self, request, spider):
+#         agent = random.choice(USA)
+#         request.headers["User-Agent"] = agent

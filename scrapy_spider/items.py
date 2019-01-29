@@ -45,3 +45,19 @@ class MobileUserAgentItem(Item):
     software_type = Field()
     os = Field()
     popularity = Field()
+
+
+class SlickDealsItem(Item):
+
+    user_name = Field()
+    joined = Field()
+    title = Field()
+    posts = Field()
+    reputation = Field()
+    date_time = Field()
+    post_number = Field()
+    content = Field()
+    email = Field()
+    up_vote = Field()
+    down_vote = Field()
+    profile = Field()
