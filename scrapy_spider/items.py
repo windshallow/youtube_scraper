@@ -61,3 +61,29 @@ class SlickDealsItem(Item):
     up_vote = Field()
     down_vote = Field()
     profile = Field()
+
+
+class InstagramItem(Item):
+    pk = Field()
+    username = Field()
+    full_name = Field()
+    is_private = Field()
+    profile_pic_url = Field()
+    profile_pic_id = Field()
+    is_verified = Field()
+    has_anonymous_profile_picture = Field()
+    # follower_count = Field()
+    reel_auto_archive = Field()
+    # byline = Field()
+    mutual_followers_count = Field()
+    unseen_count = Field()
+
+    profile_url = Field()
+
+    followers = Field()
+    following = Field()
+    posts = Field()
+    external_url = Field()
+    last_online = Field()
+
+    get_time = Field()
