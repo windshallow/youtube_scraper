@@ -12,7 +12,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 options = webdriver.ChromeOptions()
 options.add_argument('lang=zh_CN.UTF-8')
-driver = webdriver.Chrome(chrome_options=options)
+# driver = webdriver.Chrome(chrome_options=options)
+driver = {}  # todo httplib.BadStatusLine: '' 暂时这么处理这个报错，执行其他爬虫时
 
 target = "https://www.instagram.com/mirei_kiritani_/"
 
