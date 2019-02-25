@@ -5,11 +5,16 @@ Authored by: LRW
 import datetime
 import hashlib
 import json
+import random
 import re
+from time import sleep, time
+
 import scrapy
+import requests
 from urllib import quote
 from collections import OrderedDict
 from scrapy_spider.items import InstagramItem
+from scrapy_spider.utils import ua_list
 
 
 class InstagramSpider(scrapy.Spider):
@@ -190,7 +195,6 @@ class InsSpider(scrapy.Spider):
         'DOWNLOADER_MIDDLEWARES': {
             'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 100,
             'scrapy_spider.middlewares.CustomRetryMiddleware': 1000,
-            # 'scrapy_spider.middlewares.RotateUserAgentMiddleware': 543,
         },
 
         'FEED_EXPORT_FIELDS': [
@@ -206,6 +210,11 @@ class InsSpider(scrapy.Spider):
         self.max_loading_times = int(kwargs.get("times", 10))
         self.loading_times = 0
 
+        self.ua = random.choice(ua_list.UA_LIST)
+        self.query_hash = 'f92f56d47dc7a55b606908374b43a314'
+
+        self.container = set()
+
     def start_requests(self):
         """
         https://www.instagram.com/web/search/topsearch/?context=blended&query=football&rank_token=0.6059456550198723&include_reel=true
@@ -218,12 +227,14 @@ class InsSpider(scrapy.Spider):
         yield scrapy.Request(url)
 
     @staticmethod
-    def cookie(csrftoken):
+    def cookie(csrf_token):
+        """返回 cookie_string, 用于 request.headers"""
 
+        # todo 可以考虑发起一次主页的请求来设置这些参数，更灵活一些。
         cookie = {
             'rur': 'FRC',
-            'mid': 'XGYzZAAEAAE4S_MNDivha2fkaI7s',
-            'csrftoken': csrftoken,
+            'mid': 'XGYzZAAEAAE4S_MNDivha2fkaI7s',  # 不同加载请求中，该值不会更改
+            'csrftoken': csrf_token,
             'ds_user_id': '11168392113',
             'sessionid': '11168392113%3A51cZNjbvVfyt1p%3A10',
             'urlgen': '"{\"95.169.14.232\": 25820}:1gwi7Q:Pbk2T58XBuljTG9wEj94ODVaddc"',
@@ -235,35 +246,46 @@ class InsSpider(scrapy.Spider):
 
     @property
     def user_agent(self):
-        return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) ' \
-               'Chrome/72.0.3626.109 Safari/537.36'
+        """保证对于一次 explore 操作下的所有js加载的 user_agent 一致, 才能更加近似于手动操作"""
 
-    def x_instagram_gis(self, query_variables, rhx_gis):
+        return self.ua
 
-        """创建签名
+        # return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) ' \
+        #        'Chrome/72.0.3626.109 Safari/537.36'
+
+    def x_instagram_gis(self, rhx_gis):
+
+        """签名
         https://stackoverflow.com/questions/49786980/how-to-perform-unauthenticated-instagram-web-scraping-in-response-to-recent-priv
+
+        "{rhx_gis}:{path}"
         """
 
-        # query_variables = '%7B%22tag_name%22%3A%22football%22%2C%22show_ranked%22%3Afalse%2C%22first%22%3A10%2C%22after%22%3A%22QVFCSXhZYWtiZnA0VHZCYmFoaVRQN0J1UUpJcW1iSTctNTZPYXVQc2JHVTdtSHlVU3RWOXZNcGFWcWtXOGVsT21ab3VhTEZ6T2doMHVtb1RLM0NDS204Tg%3D%3D%22%7D'
-        # rhx_gis = 'e929e57cbe8e65b202c6e5d8f808d644'
         md5 = hashlib.md5()
-        md5.update(json.dumps({rhx_gis: query_variables}))
+        path = '/explore/tags/%s/' % self.keyword
+        string = "{rhx_gis}:{path}".format(rhx_gis=rhx_gis, path=path)
+        md5.update(string)
         x_instagram_gis = md5.hexdigest()
+
         return x_instagram_gis
 
-    def headers(self, csrftoken):
+    def headers(self, csrf_token, rhx_gis):
+        """请求头
+            备注: 所有加载请求的 csrf_token 均一致;
+                 x_instagram_gis 均不一致, 即 rhx_gis 不一致（目前暂用一致，貌似也能跑）。
+        """
 
         headers = {
             'accept': '*/*',
             'accept-encoding': 'gzip, deflate, br',
             'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,la;q=0.6',
             'cache-control': 'no-cache',
-            'cookie': self.cookie(csrftoken),
+            'cookie': self.cookie(csrf_token),
             'pragma': 'no-cache',
             'referer': 'https://www.instagram.com/explore/tags/%s/' % self.keyword,
             'user-agent': self.user_agent,
             'x-ig-app-id': '936619743392459',  # 貌似不会变用同一台机器抓的时候
-            'x-instagram-gis': 'e929e57cbe8e65b202c6e5d8f808d644',
+            'x-instagram-gis': self.x_instagram_gis(rhx_gis),
             'x-requested-with': 'XMLHttpRequest',
         }
 
@@ -275,7 +297,7 @@ class InsSpider(scrapy.Spider):
         table = OrderedDict([
             ("tag_name", self.keyword),
             ("show_ranked", False),
-            ("first", 12),
+            ("first", random.randint(3, 20)),
             ("after", end_cursor)
         ])
         query_string_parameters = quote(json.dumps(table, sort_keys=False).replace(' ', ''))  # key有排序
@@ -286,33 +308,31 @@ class InsSpider(scrapy.Spider):
         return url
 
     def parse(self, response):
+        """第一次解析 explore 页面（非js）"""
 
         target = response.text.split('<script type="text/javascript">window._sharedData =')[1].split(';</script>')[0]
-        # target = response.text  # js
-        target_dict = json.loads(target)
+        target_dict = json.loads(target)  # dict
 
-        # print target_dict.keys()
         csrf_token = target_dict['config']['csrf_token']
         rhx_gis = target_dict['rhx_gis']
 
-        hashtag = target_dict['entry_data']['TagPage'][0]['graphql']['hashtag']
-        # print hashtag.keys()
-
+        hashtag = target_dict['entry_data']['TagPage'][0]['graphql']['hashtag']  # dict
         # id_ = hashtag['id']
 
         for obj_ in hashtag['edge_hashtag_to_media']['edges']:
-            obj = obj_['node']
-            # print obj.keys()
+            obj = obj_['node']  # print obj.keys()
 
             # display_url = obj['display_url']  # 视频主图
             # owner_id = obj['owner']['id']  # 视频发布者的id
             # taken_at_timestamp = obj['taken_at_timestamp']  # 视频发布时间戳
-            shortcode = obj['shortcode']  # 可构造视频详情页url
             # video_id = obj['id']  # 猜测是视频的id
 
-            # if shortcode:
-            #     video_url = "https://www.instagram.com/p/%s/" % shortcode
-            #     yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
+            shortcode = obj['shortcode']  # 可构造视频详情页url
+            self.container.add(shortcode)
+
+            if shortcode:
+                video_url = "https://www.instagram.com/p/%s/" % shortcode
+                yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
 
         # 动态加载
         page_info = hashtag['edge_hashtag_to_media']['page_info']
@@ -321,65 +341,129 @@ class InsSpider(scrapy.Spider):
             self.loading_times += 1
             print '\n开始第%s次加载\n' % self.loading_times
 
-            js_query_url = self.js_query_url('f92f56d47dc7a55b606908374b43a314', end_cursor)
-            print js_query_url, '========js_query_url========'
-            print '\n'
-            import ipdb;ipdb.set_trace()
-            yield scrapy.Request(js_query_url, callback=self.parse_js_response, headers=self.headers(csrf_token),
-                                 meta={'csrf_token': csrf_token})
-        #     yield scrapy.Request(js_query_url, callback=self.parse, headers=self.headers())
-        # else:
-        #     print '加载完成 --- 加载次数: ', self.loading_times
+            js_query_url = self.js_query_url(self.query_hash, end_cursor)
+            # import ipdb;ipdb.set_trace()
 
-    def parse_js_response(self, response):
+            # 神奇的是scrapy.Request 居然不可以，而 Requests 模块居然可以。
+            # yield scrapy.Request(js_query_url, callback=self.parse_js_response,
+            #                      headers=self.headers(csrf_token, rhx_gis),
+            #                      meta={'csrf_token': csrf_token})
 
-        # todo 待解析出 csrftoken
-        csrftoken = response.headers['Set-Cookie']
-        # 'csrftoken=FLhU21raeQ6QDehYPW6OwER9YmVKWLlp; Domain=.instagram.com; expires=Fri, 21-Feb-2020 03:18:41 GMT; Max-Age=31449600; Path=/; Secure'
+            result = self.parse_js_requests(js_query_url, csrf_token, rhx_gis)
+            if result['has_next_page']:
+                yield scrapy.Request('https://www.amazon.com/product-reviews/B01LEEWO7C?ie=UTF8&t=' + str(time())[:-3],
+                                     callback=self.parse_transition_url, meta=result,
+                                     dont_filter=True)
+
+        else:
+            print '加载完成 --- 加载次数: ', self.loading_times
+
+    def parse_js_requests(self, js_query_url, csrf_token, rhx_gis):
+        """伪parse: 解析js请求"""
+
+        sleep(random.uniform(1, 5))  # 模拟人的操作
+        response = requests.get(js_query_url, headers=self.headers(csrf_token, rhx_gis))
 
         target_dict = json.loads(response.text)
-        # target_dict.keys()  # [u'status', u'data']
-
-        # target_dict['data']['hashtag'].keys()
-        # [u'name', u'allow_following', u'edge_hashtag_to_media', u'is_top_media_only', u'profile_pic_url',
-        # u'is_following', u'edge_hashtag_to_content_advisory', u'edge_hashtag_to_top_posts', u'id']
-
         short = target_dict['data']['hashtag']
-        assert short['name'] == self.keyword
-
-        # if short['allow_following']:
-        #     print '可以继续加载'
-
-        id_ = short['id']
-        top_posts = short['edge_hashtag_to_top_posts']  # 热门视频
-
-        for i in top_posts['edges']:
-            shortcode_ = i['node']['shortcode']
-
         media = short['edge_hashtag_to_media']
-        count = media['count']  # 相关视频的总数
 
         sum_count = len(media['edges'])
-        print '本次加载的视频个数: %s' % sum_count
+        self.loading_times += 1
+        print '第 %s 次加载的视频个数: %s' % (self.loading_times, sum_count)
 
-        """
-        >>> edge_hashtag_to_media['edges'][0]['node'].keys()
-        [u'edge_media_preview_like', u'is_video', u'edge_media_to_caption', u'dimensions', u'display_url', 
-        u'edge_media_to_comment', u'comments_disabled', u'__typename', u'owner', u'accessibility_caption', 
-        u'edge_liked_by', u'thumbnail_resources', u'taken_at_timestamp', u'thumbnail_src', u'shortcode', u'id']
-        """
-
+        short_codes = set()
         for i in media['edges']:
-            shortcode = i['node']['shortcode']
-            print shortcode
+            short_codes.add(i['node']['shortcode'])
+            self.container.add(i['node']['shortcode'])
 
-        # 继续加载
         end_cursor = media['page_info']['end_cursor']
-        if media['page_info']['has_next_page']:
-            print '还有下一页'
-            js_query_url = self.js_query_url('f92f56d47dc7a55b606908374b43a314', end_cursor)
-            yield scrapy.Request(js_query_url,
-                                 callback=self.parse_js_response, headers=self.headers(response.meta['csrf_token']))
+        has_next_page = media['page_info']['has_next_page']
+
+        return {
+            'shortcode': list(short_codes),
+            'has_next_page': has_next_page,
+
+            # 构造下一次js请求的参数
+            'js_query_url': self.js_query_url(query_hash=self.query_hash, end_cursor=end_cursor),
+            'csrf_token': csrf_token,
+            'rhx_gis': rhx_gis
+        }
+
+    def parse_transition_url(self, response):
+        """作为过渡解析页面"""
+
+        data = response.meta
+        print data
+
+        for shortcode in data['shortcode']:
+            if shortcode:
+                video_url = "https://www.instagram.com/p/%s/" % shortcode
+                yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
+
+        result = self.parse_js_requests(data['js_query_url'], data['csrf_token'], data['rhx_gis'])
+        if result['has_next_page'] and self.loading_times < self.max_loading_times:
+            yield scrapy.Request('https://www.amazon.com/product-reviews/B01LEEWO7C?ie=UTF8&t=' + str(time())[:-3],
+                                 callback=self.parse_transition_url, meta=result, dont_filter=True)
+        else:
+            print '加载完成 --- 加载次数: %s, 视频个数: %s' % (self.loading_times, len(self.container))
+
+    # 未弄清为啥 scrapy.Request 不能附加请求头的问题, 暂时弃用待日后研究.
+    # def parse_js_response(self, response):
+    #
+    #     csrf_token = response.meta.get('csrf_token')
+    #
+    #     target_dict = json.loads(response.text)
+    #     # target_dict.keys()  # [u'status', u'data']
+    #
+    #     # target_dict['data']['hashtag'].keys()
+    #     # [u'name', u'allow_following', u'edge_hashtag_to_media', u'is_top_media_only', u'profile_pic_url',
+    #     # u'is_following', u'edge_hashtag_to_content_advisory', u'edge_hashtag_to_top_posts', u'id']
+    #
+    #     short = target_dict['data']['hashtag']
+    #     assert short['name'] == self.keyword
+    #
+    #     # if short['allow_following']:
+    #     #     print '可以继续加载'
+    #
+    #     # id_ = short['id']
+    #
+    #     # # 热门视频: 有空再分析
+    #     # top_posts = short['edge_hashtag_to_top_posts']
+    #     #
+    #     # for i in top_posts['edges']:
+    #     #     shortcode_ = i['node']['shortcode']
+    #
+    #     media = short['edge_hashtag_to_media']
+    #     # count = media['count']  # 相关视频的总数
+    #
+    #     sum_count = len(media['edges'])
+    #     print '本次加载的视频个数: %s' % sum_count
+    #
+    #     """
+    #     >>> edge_hashtag_to_media['edges'][0]['node'].keys()
+    #     [u'edge_media_preview_like', u'is_video', u'edge_media_to_caption', u'dimensions', u'display_url',
+    #     u'edge_media_to_comment', u'comments_disabled', u'__typename', u'owner', u'accessibility_caption',
+    #     u'edge_liked_by', u'thumbnail_resources', u'taken_at_timestamp', u'thumbnail_src', u'shortcode', u'id']
+    #     """
+    #
+    #     for i in media['edges']:
+    #         shortcode = i['node']['shortcode']
+    #         print shortcode
+    #
+    #     # 继续加载
+    #     end_cursor = media['page_info']['end_cursor']
+    #     if media['page_info']['has_next_page']:
+    #         print '还有下一页'
+    #
+    #         import ipdb;ipdb.set_trace()
+    #
+    #         js_query_url = self.js_query_url('f92f56d47dc7a55b606908374b43a314', end_cursor)
+    #         yield scrapy.Request(js_query_url,
+    #                              callback=self.parse_js_response,
+    #                              headers=self.headers(csrf_token, ''),
+    #                              meta={'csrf_token': csrf_token}
+    #                              )
 
     def parse_video_detail(self, response):
 
