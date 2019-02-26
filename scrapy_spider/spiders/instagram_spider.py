@@ -198,8 +198,9 @@ class InsSpider(scrapy.Spider):
         },
 
         'FEED_EXPORT_FIELDS': [
-            'username', 'full_name', 'followers', 'following', 'posts', 'external_url', 'last_online', 'profile_url',
-            'get_time'
+            'username', 'full_name', 'followers', 'following', 'posts', 'highlight_reel_count', 'business_phone_number',
+            'business_email', 'business_category_name', 'business_address', 'is_business_account', 'is_joined_recently',
+            'biography', 'external_url', 'last_online', 'profile_url', 'get_time', 'keyword'
         ]
     }
 
@@ -528,6 +529,25 @@ class InsSpider(scrapy.Spider):
 
         item["last_online"] = dt1
         item["get_time"] = datetime.datetime.now()
+
+        # 或者都从这里提取数据
+        target = response.text.split('<script type="text/javascript">window._sharedData =')[1].split(';</script>')[0]
+        target_dict = json.loads(target)
+        useful_dict = target_dict['entry_data']['ProfilePage'][0]['graphql']['user']
+
+        item['business_phone_number'] = useful_dict.get('business_phone_number')
+        item['business_email'] = useful_dict.get('business_email')
+        item['is_joined_recently'] = useful_dict.get('is_joined_recently')
+        item['highlight_reel_count'] = useful_dict.get('highlight_reel_count')
+        item['is_business_account'] = useful_dict.get('is_business_account')
+        item['full_name'] = useful_dict.get('full_name')
+        item['biography'] = useful_dict.get('biography')
+        item['business_address'] = useful_dict.get('business_address_json')
+        item['business_category_name'] = useful_dict.get('business_category_name')
+        item['following'] = useful_dict['edge_follow']['count']
+        item['external_url'] = useful_dict.get('external_url')
+
+        item['keyword'] = self.keyword
 
         yield item
 

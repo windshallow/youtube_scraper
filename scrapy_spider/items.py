@@ -87,3 +87,14 @@ class InstagramItem(Item):
     last_online = Field()
 
     get_time = Field()
+
+    business_phone_number = Field()
+    business_email = Field()
+    is_joined_recently = Field()
+    highlight_reel_count = Field()
+    is_business_account = Field()
+    biography = Field()
+    business_address = Field()
+    business_category_name = Field()
+
+    keyword = Field()
