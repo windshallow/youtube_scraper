@@ -98,3 +98,9 @@ class InstagramItem(Item):
     business_category_name = Field()
 
     keyword = Field()
+
+    post_url = Field()
+    text = Field()
+    like_count = Field()
+    video_view_count = Field()
+    review_count = Field()

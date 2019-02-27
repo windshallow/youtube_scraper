@@ -2,16 +2,17 @@
 """
 Authored by: LRW
 """
+import csv
 import datetime
 import hashlib
 import json
 import random
 import re
-from time import sleep, time
+from time import sleep, time, strftime, localtime
 
 import scrapy
 import requests
-from urllib import quote
+from urllib import quote, unquote
 from collections import OrderedDict
 from scrapy_spider.items import InstagramItem
 from scrapy_spider.utils import ua_list
@@ -190,7 +191,7 @@ class InsSpider(scrapy.Spider):
     """
 
     name = "ins_spider"
-    allowed_domains = ["instagram.com"]
+    allowed_domains = ["instagram.com", "api.proxycrawl.com"]
     custom_settings = {
         'DOWNLOADER_MIDDLEWARES': {
             'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 100,
@@ -331,9 +332,10 @@ class InsSpider(scrapy.Spider):
             shortcode = obj['shortcode']  # 可构造视频详情页url
             self.container.add(shortcode)
 
-            if shortcode:
-                video_url = "https://www.instagram.com/p/%s/" % shortcode
-                yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
+            # 2019.2.27 单独拆开 ** ----------- **** ----------- **** ----------- **** ----------- **
+            # if shortcode:
+            #     video_url = "https://www.instagram.com/p/%s/" % shortcode
+            #     yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
 
         # 动态加载
         page_info = hashtag['edge_hashtag_to_media']['page_info']
@@ -352,8 +354,7 @@ class InsSpider(scrapy.Spider):
 
             result = self.parse_js_requests(js_query_url, csrf_token, rhx_gis)
             if result['has_next_page']:
-                yield scrapy.Request('https://www.amazon.com/product-reviews/B01LEEWO7C?ie=UTF8&t=' + str(time())[:-3],
-                                     callback=self.parse_transition_url, meta=result,
+                yield scrapy.Request(self.transition_url(), callback=self.parse_transition_url, meta=result,
                                      dont_filter=True)
 
         else:
@@ -378,6 +379,11 @@ class InsSpider(scrapy.Spider):
             short_codes.add(i['node']['shortcode'])
             self.container.add(i['node']['shortcode'])
 
+        # ----------------------------------------- 每段做一次保存
+        if len(self.container) >= 2000:
+            self.save_shortcode()
+            self.container = set()
+
         end_cursor = media['page_info']['end_cursor']
         has_next_page = media['page_info']['has_next_page']
 
@@ -395,19 +401,20 @@ class InsSpider(scrapy.Spider):
         """作为过渡解析页面"""
 
         data = response.meta
-        print data
 
-        for shortcode in data['shortcode']:
-            if shortcode:
-                video_url = "https://www.instagram.com/p/%s/" % shortcode
-                yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
+        # 2019.2.27 单独拆开 ** ----------- **** ----------- **** ----------- **** ----------- **
+        # for shortcode in data['shortcode']:
+        #     if shortcode:
+        #         video_url = "https://www.instagram.com/p/%s/" % shortcode
+        #         yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
 
         result = self.parse_js_requests(data['js_query_url'], data['csrf_token'], data['rhx_gis'])
         if result['has_next_page'] and self.loading_times < self.max_loading_times:
-            yield scrapy.Request('https://www.amazon.com/product-reviews/B01LEEWO7C?ie=UTF8&t=' + str(time())[:-3],
-                                 callback=self.parse_transition_url, meta=result, dont_filter=True)
+            yield scrapy.Request(self.transition_url(), callback=self.parse_transition_url, meta=result,
+                                 dont_filter=True)
         else:
             print '加载完成 --- 加载次数: %s, 视频个数: %s' % (self.loading_times, len(self.container))
+            self.save_shortcode()
 
     # 未弄清为啥 scrapy.Request 不能附加请求头的问题, 暂时弃用待日后研究.
     # def parse_js_response(self, response):
@@ -468,6 +475,9 @@ class InsSpider(scrapy.Spider):
 
     def parse_video_detail(self, response):
 
+        response_url = unquote(response.url)
+        response_url = response_url.split('url=')[-1] if 'url=' in response_url else response_url
+
         target = response.text.split('<script type="text/javascript">window._sharedData =')[1].split(';</script>')[0]
         target_dict = json.loads(target)
         # print target_dict.keys()
@@ -475,16 +485,44 @@ class InsSpider(scrapy.Spider):
         target_dict = target_dict['entry_data']['PostPage'][0]['graphql']['shortcode_media']
         # print target_dict.keys()
 
+        # 配文
+        try:
+            text = target_dict['edge_media_to_caption']['edges'][0]['node']['text']
+        except IndexError:
+            text = ''
+
+        # 点赞数
+        like_count = target_dict['edge_media_preview_like']['count']
+
+        # 视频浏览数（图片则无该数据）
+        video_view_count = target_dict.get('video_view_count')
+
+        # 评论数
+        review_count = target_dict['edge_media_to_comment']['count']
+
         username = target_dict['owner']['username']
         profile_url = "https://www.instagram.com/" + username + "/"
+
+        if self.token:
+            profile_url = 'https://api.proxycrawl.com/?token=%s&%s&url=' % (
+                self.token, 'country=US') + quote(profile_url)
+
         yield scrapy.Request(profile_url, callback=self.parse_profile,
                              meta={
                                  'username': username,
                                  'full_name': target_dict['owner']['full_name'],
-                                 'video_url': response.url
+                                 'post_url': response_url,
+
+                                 'text': text,
+                                 'like_count': like_count,
+                                 'video_view_count': video_view_count,
+                                 'review_count': review_count
                              })
 
     def parse_profile(self, response):
+
+        response_url = unquote(response.url)
+        response_url = response_url.split('url=')[-1] if 'url=' in response_url else response_url
 
         item = InstagramItem()
         meta = response.meta
@@ -492,7 +530,13 @@ class InsSpider(scrapy.Spider):
         item["username"] = meta.get("username")
         item["full_name"] = meta.get("full_name")
 
-        item["profile_url"] = response.url
+        item["post_url"] = meta.get("post_url")
+        item["text"] = meta.get("text")
+        item["like_count"] = meta.get("like_count")
+        item["video_view_count"] = meta.get("video_view_count")
+        item["review_count"] = meta.get("review_count")
+
+        item["profile_url"] = response_url
 
         description = response.xpath('//meta[@property="og:description"]/@content').extract()[0].replace(',', '')
         item["followers"] = self.find_number('Followers', description)
@@ -567,3 +611,87 @@ class InsSpider(scrapy.Spider):
         except IndexError:
             pass
         return obj
+
+    def save_shortcode(self):
+
+        file_name = '/Users/admin/Desktop/ins/%s-%s.csv' % (self.keyword,
+                                                            strftime('%Y-%m-%d %H:%M:%S', localtime(time())))
+        with open(file_name, u"w") as result_file:
+            writer = csv.writer(result_file)
+            writer.writerow(['shortcode'])
+            for item in self.container:
+                writer.writerow([item])
+
+        print 'shortcode 数据存档完毕'
+
+    @staticmethod
+    def transition_url():
+        """过渡用的url"""
+
+        url = 'https://www.amazon.com/product-reviews/B01LEEWO7C?ie=UTF8&t=%s&r=%s' % (str(time())[:-3],
+                                                                                       str(random.random())[2:])
+        return url
+
+
+class InsDeepSpider(InsSpider):
+
+    """爬取 Instagram 关键字搜索的个人信息
+
+    proxychains4 scrapy crawl ins_deep_spider -o travelaway-1.csv
+    """
+
+    name = "ins_deep_spider"
+    custom_settings = {
+        'DOWNLOADER_MIDDLEWARES': {
+            'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 100,
+            'scrapy_spider.middlewares.CustomRetryMiddleware': 1000,
+        },
+
+        'FEED_EXPORT_FIELDS': [
+            'username', 'full_name', 'followers', 'following', 'posts', 'highlight_reel_count', 'like_count',
+            'video_view_count', 'review_count', 'business_phone_number', 'business_email', 'business_category_name',
+            'business_address', 'is_business_account', 'is_joined_recently', 'biography', 'post_url', 'text',
+            'external_url', 'last_online', 'profile_url', 'get_time', 'keyword'
+        ]
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(InsDeepSpider, self).__init__(*args, **kwargs)
+
+        self.base_start_url = 'https://www.instagram.com/p/%s/'
+        self.short_code_resource = '/Users/admin/Desktop/ins/'
+
+        self.container = []
+
+    def start_requests(self):
+        """
+        https://www.instagram.com/p/BuXPcdEDGH_/
+        """
+
+        file_names = [self.short_code_resource + i + '.csv' for i in [
+            'travelaway-2019-02-27 14-30-14',
+            'travelaway-2019-02-27 14-36-26',
+            'travelaway-2019-02-27 14-42-28',
+            'travelaway-2019-02-27 14-48-52',
+            'travelaway-2019-02-27 14-55-21'
+        ]]
+
+        for file_name in file_names:
+
+            with open(file_name) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=',')
+                line_count = 0
+                for row in csv_reader:
+                    if line_count == 0:
+                        line_count += 1
+                    else:
+                        line_count += 1
+                        self.container.append(row[0])
+
+        for short_code in self.container:
+            url = self.base_start_url % short_code
+
+            if self.token:
+                url = 'https://api.proxycrawl.com/?token=%s&%s&url=' % (self.token, 'country=US') + quote(url)
+
+            yield scrapy.Request(url, callback=self.parse_video_detail)
