@@ -333,9 +333,9 @@ class InsSpider(scrapy.Spider):
             self.container.add(shortcode)
 
             # 2019.2.27 单独拆开 ** ----------- **** ----------- **** ----------- **** ----------- **
-            # if shortcode:
-            #     video_url = "https://www.instagram.com/p/%s/" % shortcode
-            #     yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
+            if shortcode:
+                video_url = "https://www.instagram.com/p/%s/" % shortcode
+                yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
 
         # 动态加载
         page_info = hashtag['edge_hashtag_to_media']['page_info']
@@ -403,10 +403,10 @@ class InsSpider(scrapy.Spider):
         data = response.meta
 
         # 2019.2.27 单独拆开 ** ----------- **** ----------- **** ----------- **** ----------- **
-        # for shortcode in data['shortcode']:
-        #     if shortcode:
-        #         video_url = "https://www.instagram.com/p/%s/" % shortcode
-        #         yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
+        for shortcode in data['shortcode']:
+            if shortcode:
+                video_url = "https://www.instagram.com/p/%s/" % shortcode
+                yield scrapy.Request(video_url, callback=self.parse_video_detail, meta={})
 
         result = self.parse_js_requests(data['js_query_url'], data['csrf_token'], data['rhx_gis'])
         if result['has_next_page'] and self.loading_times < self.max_loading_times:
@@ -503,9 +503,9 @@ class InsSpider(scrapy.Spider):
         username = target_dict['owner']['username']
         profile_url = "https://www.instagram.com/" + username + "/"
 
-        if self.token:
-            profile_url = 'https://api.proxycrawl.com/?token=%s&%s&url=' % (
-                self.token, 'country=US') + quote(profile_url)
+        # if self.token:
+        #     profile_url = 'https://api.proxycrawl.com/?token=%s&%s&url=' % (
+        #         self.token, 'country=US') + quote(profile_url)
 
         yield scrapy.Request(profile_url, callback=self.parse_profile,
                              meta={
