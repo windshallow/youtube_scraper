@@ -4,7 +4,7 @@
 
 序列化使用 schema 中的 dump() 或 dumps() 方法，其中:
     dump() 方法实现 obj -> dict，
-    dumps()方法实现 obj -> string，
+    dumps()方法实现 obj -> string【json】，
 
     由于 Flask 能直接序列化 dict（使用 jsonify ），而且你肯定还会对 dict 进一步处理，没必要现在转化成string，
     故通常 Flask 与 Marshmallow 配合序列化时，用 dump()方法即可。
