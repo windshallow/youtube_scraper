@@ -21,7 +21,7 @@ class YoutubeCelebrityInfoSpider(scrapy.Spider):
 
     proxychains4 scrapy crawl youtube_celebrity_info -a page_limit=2 -a keyword='bath+mat+review' -o a.json
 
-    proxychains4 scrapy crawl youtube_celebrity_info -a page_limit=2 -a keyword='bath+mat+review' -a csv=1 -o  a.csv
+    proxychains4 scrapy crawl youtube_celebrity_info -a page_limit=2 -a keyword='bath+mat+review' -a csv=1 -o a.csv
 
     """
 
@@ -39,10 +39,10 @@ class YoutubeCelebrityInfoSpider(scrapy.Spider):
         # 'CRAWLERA_ENABLED': True,
         # 'CRAWLERA_APIKEY': '854fbe371c13433b871ece7923163875',
 
-        # 'FEED_EXPORT_FIELDS': [
-        #     'name', 'subscriber_count', 'view_count', 'mail_string', 'link_string', 'google', 'twitter', 'facebook',
-        #     'instagram', 'website', 'country', 'joined_date', 'description', 'other_contact', 'homepage_link', 'keyword'
-        # ]
+        'FEED_EXPORT_FIELDS': [
+            'name', 'subscriber_count', 'view_count', 'mail_string', 'link_string', 'google', 'twitter', 'facebook',
+            'instagram', 'website', 'country', 'joined_date', 'description', 'other_contact', 'homepage_link', 'keyword'
+        ],
         'ITEM_PIPELINES': {
             # 'scrapy_spider.pipelines.YoutubeCelebrityInfoPipeline': 300,
         }
