@@ -4,16 +4,24 @@
 class JDYQueryBuilderMixin(object):
     """JDY 数据筛选器"""
 
-    def __init__(self, fields, limit=100):
-        self.fields = fields
-        self.limit = limit
-
     @property
     def data_id(self):
         """类似于游标的作用"""
         if hasattr(self, '_data_id'):
             return self._data_id
         return ""
+
+    @property
+    def limit(self):
+        if hasattr(self, '_limit'):
+            return self._limit
+        return 100
+
+    @property
+    def fields(self):
+        if hasattr(self, "_fields"):
+            return self._fields
+        return []
 
     @property
     def rel(self):
@@ -32,14 +40,20 @@ class JDYQueryBuilderMixin(object):
     # def data_id(self, value):
     #     setattr(self, "_data_id", value)
 
-    def set_data_id(self, data_id):
-        setattr(self, "_data_id", data_id)
+    def set_data_id(self, value):
+        setattr(self, "_data_id", value)
 
-    def set_rel(self, rel):
-        if rel not in ['and', 'or']:
+    def set_limit(self, value):
+        setattr(self, "_limit", value)
+
+    def set_fields(self, value):
+        setattr(self, "_fields", value)
+
+    def set_rel(self, value):
+        if value not in ['and', 'or']:
             raise Exception
         else:
-            setattr(self, '_rel', rel)
+            setattr(self, '_rel', value)
 
     @staticmethod
     def create_cond_single(field, method, value=None, type_=None):
@@ -72,6 +86,7 @@ class JDYQueryBuilderMixin(object):
         else:
             setattr(self, '_cond', [single])
 
+    @property
     def data_query(self):
         query = {
             "data_id": self.data_id,
@@ -85,4 +100,18 @@ class JDYQueryBuilderMixin(object):
         return query
 
     def __repr__(self):
-        return '<Query Body(data_id={self.data_id!r})>'.format(self=self)
+        return '<Query Body({self.data_query!r})>'.format(self=self)
+
+
+if __name__ == '__main__':
+    import json
+
+    obj = JDYQueryBuilderMixin()
+    obj.set_data_id(110)
+    obj.set_limit(66)
+    obj.set_fields(['aa', 'bb'])
+    obj.set_rel('and')
+    obj.add_cond_single('aa', 'eq', ['hello'])
+    obj.add_cond_single('bb', 'not_empty')
+    print obj
+    print(json.dumps(obj.data_query, indent=2))  # indent 缩进格数
