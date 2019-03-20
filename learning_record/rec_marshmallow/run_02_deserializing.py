@@ -2,18 +2,23 @@
 
 """Deserializing（反序列化）
 
-反序列化使用 schema 中的 load() 或 loads() 方法，其中:
-    load() 方法实现 dict -> dict，
-    loads()方法实现 json -> dict，
+1）反序列化的方法:
+    load()  方法实现 dict -> dict ,
+    loads() 方法实现 json -> dict .
 
     load() 将 dict 等类型转换成应用层的数据结构，即orm对象：
 
 
-对反序列化而言，将传入的 dict 变成 object 更加有意义。
-在Marshmallow中，dict -> object的方法需要自己实现，然后在该方法前面加上一个decoration：post_load 即可。
+2）dict -> object 的实现:
+    首先在 schema 中自定义一个方法来实现: 传入参数 data, 返回 obj;
+    然后在该方法前面加上一个 @post_load 即可 ( 使得传入的 data 即为 load 方法处理后的返回值 dict )。
 
-tips: 1) 对于 post_load 之类 (pre_load，post_load，pre_dump 和 post_dump) 的 事件钩子, 可以做很多拓展事情。
-      2) @post_load 对于 load(), loads() 均有效; 猜测 其他的装饰器 也一样。
+
+3）tips:
+    3.1) 对于 post_load 之类 (pre_load，post_load，pre_dump 和 post_dump) 的 事件钩子, 可以做很多拓展事情。
+    3.2) @post_load 对于 load(), loads() 均有效; 猜测 其他的装饰器 也一样。
+
+    3.3）每次调用 load(), loads() 方法之后, 会将返回值带入到  被post_load装饰  的函数的逻辑中; 。。。。。。
 
 """
 import json
@@ -37,7 +42,7 @@ if __name__ == '__main__':
     print type(errors)
     # {'name': 'Ken',
     #  'email': 'ken@yahoo.com',
-    #  'created_at': datetime.datetime(2014, 8, 11, 5, 26, 3, 869245)}
+    #  'created_at': datetime.datetime(2014, 8, 11, 5, 26, 3, 869245)}  # --------------------> 应用层的数据结构
     # <type 'dict'>
     # {}
     # <type 'dict'>
@@ -52,7 +57,7 @@ if __name__ == '__main__':
     result = schema.load(user_data)
     pprint(result.data)  # => <User(name='Ronnie')>
 
-    print '\n---------------- loads() ----------------\n'
+    print '\n---------------- @post_load 对 loads() 也有效果 ----------------\n'
 
     json_user_data = json.dumps(user_data)  # => <type 'str'>
     schema = UserSchemaN02()

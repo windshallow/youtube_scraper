@@ -2,7 +2,7 @@
 
 """many（参数many的使用）
 
-之前的序列化和反序列化，是针对一个object而言的，对于objects的处理，只需在schema中增加一个参数：many=True，即：
+之前的序列化和反序列化，是针对 单个对象 而言的，对于 多个对象 的处理，只需在schema中增加一个参数：many=True，即：
 
 """
 from marshmallow import pprint
@@ -15,6 +15,8 @@ if __name__ == '__main__':
     user2 = User(name="Keith", email="keith@stones.com")
     users = [user1, user2]
 
+    print '\n---------------- dump many ----------------\n'
+
     # option 1:
     schema = UserSchemaN01(many=True)
     result = schema.dump(users)
@@ -23,7 +25,7 @@ if __name__ == '__main__':
     pprint(data)  # list[dict]
     pprint(errors)  # <type 'dict'>
 
-    print '\n---------------- dump Option 2 ----------------\n'
+    print '\n---------------- dump many Option 2 ----------------\n'
 
     # Option 2:
     schema = UserSchemaN02()

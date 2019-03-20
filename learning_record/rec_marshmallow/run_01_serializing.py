@@ -2,17 +2,17 @@
 
 """Serializing（序列化）
 
-序列化使用 schema 中的 dump() 或 dumps() 方法，其中:
-    dump() 方法实现 obj -> dict，
-    dumps()方法实现 obj -> string【json】，
+1）序列化的方法:
+    dump()  方法实现 obj -> dict ;
+    dumps() 方法实现 obj -> string【json】.
 
     由于 Flask 能直接序列化 dict（使用 jsonify ），而且你肯定还会对 dict 进一步处理，没必要现在转化成string，
     故通常 Flask 与 Marshmallow 配合序列化时，用 dump()方法即可。
 
 
-当然你不需要每次都输出对象中所有字段，可以 过滤输出:
-    only 参数来指定你 需要 输出的字段，
-    exclude 参数来排除你 不想 输出的字段。
+2）过滤输出（过滤出schema定义的字段中你想要的个别字段）:
+    only        参数来指定你 需要 输出的字段，
+    exclude     参数来排除你 不想 输出的字段。
 
 """
 
@@ -50,4 +50,3 @@ if __name__ == '__main__':
     res_2 = summary_schema_2.dump(user).data
     pprint(res_2)
     # {u'created_at': '2019-03-12T15:00:55.303128+00:00', u'name': u'Monty'}
-
