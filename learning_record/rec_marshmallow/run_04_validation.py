@@ -10,6 +10,8 @@
 
 4）如果你传入的函数中定义了 ValidationError，当它触发时，错误信息会得到保存。
 
+5）只验证数据，而不生成对象，可以使用 Schema.validate() 。
+
 注意1：
 如果你需要执行多个验证，你应该传入可调用的验证器的集合（list, tuple, generator）
 
@@ -76,3 +78,8 @@ if __name__ == "__main__":
     # {'name': ['Missing data for required field.'],
     #  'age': ['Age is required.'],
     #  'city': {'message': 'City required', 'code': 400}}
+
+    print '\n7）---------------- 只验证数据，不生成对象 ----------------\n'
+
+    errors = UserSchema().validate({'name': 'Ronnie', 'email': 'invalid-email'})
+    print errors  # {'email': ['"invalid-email" is not a valid email address.']}
