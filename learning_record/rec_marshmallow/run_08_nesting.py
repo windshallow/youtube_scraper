@@ -11,6 +11,12 @@ collaborators = fields.Nested(UserSchema, many=True)
 
 3）如果外键对象是自引用，则Nested里第一个参数为 'self'
 
+
+4）Specifying Which Fields to Nest
+如果你想指定外键对象序列化后只保留它的几个字段，可以使用 Only 参数;
+如果需要选择外键对象的字段层次较多，可以使用  "."  操作符来指定。
+
+
 """
 
 from marshmallow import Schema, fields, pprint
@@ -46,6 +52,15 @@ class BlogSchema(Schema):
     # same_blog = fields.Nested("self", many=True)
 
 
+class BlogSchema2(Schema):
+    title = fields.String()
+    author = fields.Nested(UserSchema, only=["email"])  # only 指定外键对象序列化后只保留它的几个字段
+
+
+class SiteSchema(Schema):
+    blog = fields.Nested(BlogSchema2)
+
+
 if __name__ == "__main__":
 
     print '\n1）---------------- 序列化：嵌套 ----------------\n'
@@ -75,3 +90,20 @@ if __name__ == "__main__":
     #             'email': u'monty@python.org',
     #             'name': u'Monty'},
     #  'title': u'Something Completely Different'}
+
+    print '\n3）----------------  ----------------\n'
+
+    schema = BlogSchema2()
+    result_3, errors_3 = schema.dump(blog)
+    pprint(result_3)
+    # {'title': u'Something Completely Different',
+    #  'author': {'email': u'monty@python.org'}}
+
+    print '\n4）---------------- "."  操作符 ----------------\n'
+
+    site = {'blog': data}
+
+    schema = SiteSchema(only=['blog.author.email'])
+    result_4, errors_4 = schema.dump(site)
+    pprint(result_4)
+    # {u'blog': {u'author': {u'email': u'monty@python.org'}}}
