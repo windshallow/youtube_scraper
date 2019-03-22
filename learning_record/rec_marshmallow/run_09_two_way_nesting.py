@@ -17,7 +17,7 @@ class Author(object):
     def __init__(self, name, books=None):
         self.id = 13
         self.name = name
-        self.books = books
+        self.books = [] if not books else books
 
 
 class Book(object):
@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     print '\n-----------------------------------\n'
 
+    author_1.books.append(book_1)
     author_1_result, author_1_errors = AuthorSchema().dump(author_1)
     pprint(author_1_result, indent=2)
     # {
