@@ -16,6 +16,10 @@ collaborators = fields.Nested(UserSchema, many=True)
 如果你想指定外键对象序列化后只保留它的几个字段，可以使用 Only 参数;
 如果需要选择外键对象的字段层次较多，可以使用  "."  操作符来指定。
 
+5）Note: 主要针对外键对象的类型为自身类型的情况。
+
+如果你往Nested是多个对象的列表，传入only可以获得这列表的指定字段。
+这种情况，也可以使用 exclude 去掉你不需要的字段。同样这里也可以使用 "." 操作符。
 
 """
 
@@ -24,11 +28,14 @@ import datetime as dt
 
 
 class User(object):
-    def __init__(self, name, email):
+    def __init__(self, name, email, friends=None):
         self.name = name
         self.email = email
         self.created_at = dt.datetime.now()
-        self.friends = []
+        self.friends = friends
+        if not self.friends:
+            self.friends = []
+
         self.employer = None
 
 
@@ -107,3 +114,22 @@ if __name__ == "__main__":
     result_4, errors_4 = schema.dump(site)
     pprint(result_4)
     # {u'blog': {u'author': {u'email': u'monty@python.org'}}}
+
+    print '\n5）---------------- self 的注意事项 ----------------\n'
+
+    class UserSchema(Schema):
+        name = fields.String()
+        email = fields.Email()
+        friends = fields.Nested('self', only='name', many=True)  # 避免无限循环: friends 的 friends 的 friends 。。。
+
+    # ... create ``user`` ...
+
+    friend_1 = User(name="Mike", email="Mike@Mike.org")
+    friend_2 = User(name="Joe", email="Joe@Joe.org")
+
+    user_5 = User(name="Monty", email="monty@python.org", friends=[friend_1, friend_2])
+    result_5, errors_5 = UserSchema().dump(user_5)
+    pprint(result_5, indent=2)  # indent=2 打印的时候缩进2格
+    # {u'email': u'monty@python.org',
+    #  u'friends': [u'Mike', u'Joe'],
+    #  u'name': u'Monty'}
