@@ -26,25 +26,11 @@ print(u)  # => jack
 
 """
 
-from sqlalchemy import Column, Integer, String
-from learning_record.rec_sqlalchemy.base import db, Base
+from learning_record.rec_sqlalchemy.base import db
 
 
 # 1.3）假如我们没有指定外键，比如这样：
-class User(Base):
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50))
-    fullname = Column(String(50))
-    password = Column(String(12))
-
-
-class Address(Base):
-    __tablename__ = 'addresses'
-    id = Column(Integer, primary_key=True)
-    email_address = Column(String, nullable=False)
-    user_id = Column(Integer)
-
+from learning_record.rec_sqlalchemy.models import User, Address
 
 # 我们可以用下面方法来让 join 生效：
 # query.join(Address, User.id==Address.user_id)    # explicit condition 显式条件

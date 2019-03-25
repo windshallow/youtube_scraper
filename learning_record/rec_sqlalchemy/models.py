@@ -10,9 +10,25 @@ class User(Base):
     fullname = Column(String(50))
     password = Column(String(12))
 
+    def __init__(self, name, fullname, password):
+            self.name = name
+            self.fullname = fullname
+            self.password = password
+
+    def __str__(self):
+        return self.name
+
 
 class Address(Base):
     __tablename__ = 'addresses'
     id = Column(Integer, primary_key=True)
     email_address = Column(String, nullable=False)
     user_id = Column(Integer)
+
+    def __init__(self, email_address, user_id):
+            self.email_address = email_address
+            self.user_id = user_id
+
+    def __str__(self):
+        return self.email_address
+
