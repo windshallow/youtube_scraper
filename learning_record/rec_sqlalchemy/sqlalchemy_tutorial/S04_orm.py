@@ -11,7 +11,7 @@ from learning_record.rec_sqlalchemy.sqlalchemy_tutorial.S03_session import db, e
 
 if __name__ == "__main__":
 
-    run_block = 3.1
+    run_block = 4.1
 
     # ------------------------------------------------------------------------------------------------------------------
     # 1. 创建表（如果表已经存在，则不会创建）--- create_all
@@ -29,8 +29,7 @@ if __name__ == "__main__":
 
     if run_block == 2:
 
-        # 使用add，如果数据已经存在，会报错
-        db.add(u)
+        db.add(u)  # 使用add，如果数据已经存在 (可认为主键重复，即为已存在的数据，那 unique 列呢？)，会报错.
         db.add(r)
         db.commit()
         print r.id
@@ -41,19 +40,24 @@ if __name__ == "__main__":
 
     if run_block == 3.1:
 
-        # 3.1 使用 merge 方法，如果存在则修改，如果不存在则插入（只判断主键，不判断 unique 列）
-        r.name = 'admin'
-        db.merge(r)  # 创建了一个新的角色
-        db.commit()  # 要提交后才能在数据库中看到变化
+        # 使用 merge 方法: 如果存在则修改，如果不存在则插入（只判断主键，不判断 unique 列）
 
-        db.merge(Role(name='admin2'))  # 不存在则插入
+        r.name = 'admin'  # 并未指定 id , 默认为创建了一个新的角色.
+        db.merge(r)
         db.commit()
+
+        r.id = 1  # id 为主键, id=1 的行项目已存在，则修改该行项目.
+        db.merge(r)
+        db.commit()
+
+        db.merge(Role(name='admin2'))  # 也是新的对象, 不存在则插入.
+        db.commit()  # 要提交后才能在数据库中看到变化
 
     if run_block == 3.2:
 
-        # 3.2 也可以通过 update 修改
-        db.query(Role).filter(Role.id == 1).update({'name': 'admin1'})
-        db.query(Role).filter(Role.id == 3).update({'name': 'admin3'})  # 但是 Role.id == 3 不存在则不会插入
+        # 通过 update 修改
+        db.query(Role).filter(Role.id == 1).update({'name': 'admin1'})  # 若 Role.id == 1 存在, 则更新;
+        db.query(Role).filter(Role.id == 3).update({'name': 'admin3'})  # 若 Role.id == 3 不存在, 则不会插入.
         db.commit()
 
     # ------------------------------------------------------------------------------------------------------------------
@@ -61,7 +65,20 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------------------------------------------------
 
     if run_block == 4:
-        db.query(Role).filter(Role.id == 2).delete()
+        db.query(Role).filter(Role.id == 17).delete()
+        db.commit()
+
+    if run_block == 4.1:
+
+        # 批量删除                                   # [], (), range()
+        roles = db.query(Role).filter(Role.id.in_(range(12, 17))).delete(synchronize_session=False)
+        print '======: ', roles  # => ======:  2    # 打印了被删除的个数
+        db.commit()
+
+        # role_items = db.query(Role).filter(Role.id.in_((4, 5, 6, 7, 8, 9)))
+        # for item in role_items:
+        #     db.delete(item)
+        # db.commit()
 
     # ------------------------------------------------------------------------------------------------------------------
     # 5. 查询数据
@@ -135,14 +152,14 @@ if __name__ == "__main__":
 
     if run_block == 6:
 
-        # 6.1 exists查询 (不存在则为 ~exists() )
+        # exists 查询 (不存在则为 ~exists() )
         from sqlalchemy.sql import exists
 
         db.query(User.name).filter(~exists().where(User.role_id == Role.id))
         # 问题：User表无role_id字段 ************************************ pay attention to it !
         # SELECT name AS users_name FROM users WHERE NOT EXISTS (SELECT * FROM roles WHERE users.role_id = roles.id)
 
-        # 6.2 除了exists，any也可以表示 EXISTS
+        # any 也可以表示 EXISTS
         db.query(Role).filter(
             Role.users.any())  # 问题：Role表无users字段 ************************************ pay attention to it !
 
