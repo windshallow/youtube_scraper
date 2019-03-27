@@ -5,11 +5,6 @@
 上面的所有操作都是基于单个表的操作，下面是多表以及关系的使用，我们修改上面两个表，添加外键关联（一对多和多对一）
 """
 
-
-
-
-
-
 from sqlalchemy import Column, Integer, String
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
@@ -18,88 +13,112 @@ from learning_record.rec_sqlalchemy.sqlalchemy_tutorial.models import Base
 
 
 class User(Base):
+
+    """
+    一个用户 的 第一角色 只能是 一个角色（同理第二角色）;
+    一个角色可以被多个用户作为 第一角色 或者 第二角色 .
+
+    故:
+        用户是一, 角色是多;
+        外键定义在 "一" 的模型上                   ==>  外键字段 返回 单个的 关联对象的关联字段。
+        关系属性 relationship 定义在 "多" 的模型上  ==>  关系属性 返回 与之关联的对象所组成的 list。
+
+        特殊情况:
+            "一" 的模型也可以定义关系属性, 该属性关联到本表的外键上，直接返回关联的 对象（而不是关联字段）。
+            其实这种做法有点多余:
+                直接在定义 "多" 的模型上 relationship 时添加 --> backref="Role_users" 即可。
+
+    """
+
     __tablename__ = 'users'
+
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String(50))
     age = Column('age', Integer)
 
-    # 添加角色id外键(关联到Role表的id属性)
-    role_id = Column('role_id', Integer, ForeignKey('roles.id'))
-    # 添加同表外键(一个用户可以有多个角色)
-    second_role_id = Column('second_role_id', Integer, ForeignKey('roles.id'))
+    # 外键字段
+    role_id = Column('role_id', Integer, ForeignKey('roles.id'))  # 添加角色id外键(关联到Role表的id属性)
+    second_role_id = Column('second_role_id', Integer, ForeignKey('roles.id'))  # 添加同表 (Role) 外键(一个用户可以有多个角色)
 
-    # 添加关系属性，关联到User表(本表)的role_id外键上 - - - role就不是表里的字段了，而是属性
-    role = relationship('Role', foreign_keys='User.role_id', backref='User_role_id')
-    # 添加关系属性，关联到second_role_id外键上
+    # 关系属性, 不是表中的字段 (多余)
+    role = relationship('Role', foreign_keys='User.role_id', backref='User_role_id')  # 关联到User表(本表)的role_id外键上
     second_role = relationship('Role', foreign_keys='User.second_role_id', backref='User_second_role_id')
 
 
-# Role模型
 class Role(Base):
+
     __tablename__ = 'roles'
+
     id = Column('id', Integer, primary_key=True, autoincrement=True)
     name = Column('name', String(50))
 
-    # 添加关系属性，关联到User.role_id属性上(别表)
-    users = relationship("User", foreign_keys='User.role_id', backref="Role_users")
-    # 添加关系属性，关联到User.second_role_id属性上
+    # 关系属性, 不是表中的字段
+    users = relationship("User", foreign_keys='User.role_id', backref="Role_users")  # 关联到User.role_id属性上(别表)
     second_users = relationship("User", foreign_keys='User.second_role_id', backref="Role_second_users")
 
+# 设置外键字段 role_id:
+#   role_id = Column('role_id', Integer, ForeignKey('roles.id'))
+#   其中: 'roles.id'  =>  表名.表列
 
-# 这里有一点需要注意的是，设置外键的时候ForeignKey('roles.id')这里面使用的是表名和表列，
-# 在设置关联属性的时候relationship('Role', foreign_keys='User.role_id', backref='User_role_id')，这里的foreign_keys使用的时候类名和属性名
-
-
-# 接下来就可以使用了
-
-u = User(name='tobi', age=200)
-r1 = Role(name='admin')
-r2 = Role(name='user')
-
-u.role = r1  # 用户的第一身份为r1
-u.second_role = r2  # 用户的第一身份为r2
-
-db.add(u)  # 与之关联的对象也会自动被一起add
-db.commit()
-
-# 查询（对于外键关联的关系属性可以直接访问，在需要用到的时候session会到数据库查询）
-roles = db.query(Role).all()
-for role in roles:  # 每个角色
-    print 'role:{0} users'
-    for user in role.users:  # 有哪些用户将这个角色作为第一角色
-        print '\t{0}'.format(user.name)
-
-    print 'role:{0} second_users'
-    for user in role.second_users:  # 有哪些用户将这个角色作为第二角色
-        print '\t{0}'.format(user.name)
-
-# **********************
-users = db.query(User).all()
-for user in users:  # 每一个用户对象
-    print user.role_id  # 关联的第一角色的id
-    print user.second_role_id  # 关联的第二角色的id
-    print user.role  # 关联的第一角色对象，一个Role类的实例对象
-    print user.second_role  # 关联的第二角色对象，一个Role类的实例对象
-    print user.Role_users
-    print user.Role_second_users
-    assert user.role == user.Role_users
-    assert user.second_role == user.Role_second_users
-    print dir(user)  # 返回object所有有效的属性列表
-
-# **********************
-roles = db.query(Role).all()
-for role in roles:  # 每一个角色对象
-    print role.users  # 以该角色为第一角色的用户对象所组成的列表
-    print role.second_users  # 以该角色为第二角色的用户对象所组成的列表
-    print role.User_role_id
-    print role.User_second_role_id
-    assert role.users == role.User_role_id
-    assert role.second_users == role.User_second_role_id
+# 设置关联属性 users:
+#   users = relationship("User", foreign_keys='User.role_id', backref="Role_users")
+#
+#   users 返回与之关联的对象所组成的 list.
+#
+#   其中: foreign_keys='User.role_id'  =>  类名.外键名 ----- 用来找关联对象
+#        backref="Role_users"  =>  为关联该 Role实例对象 的 某个User实例对象 添加一个 Role_users 属性，返回该 Role实例对象（非列表）。
 
 
-# 上面表示的是一对多（多对一）的关系，还有一对一，多对多，如果要表示一对一的关系，在定义relationship的时候设置uselist为False（默认为True），如在Role中
+if __name__ == "__main__":
 
-class Role(Base):
-    # ...
-    user = relationship("User", uselist=False, foreign_keys='User.role_id', backref="Role_user")
+    run_block = 3
 
+    if run_block == 1:
+        Base.metadata.create_all(engine)  # models 里的 同名 User，Role 表得注释掉，否则报错。
+
+    if run_block == 2:
+        u = User(name='tobi', age=200)
+        r1 = Role(name='admin')
+        r2 = Role(name='user')
+
+        u.role = r1  # 用户的第一角色为r1
+        u.second_role = r2  # 用户的第二角色为r2
+
+        db.add(u)  # 与之关联的对象也会自动被一起add
+        db.commit()
+
+    if run_block == 3:
+        # 查询（对于外键关联的 关系属性 可以直接访问，在需要用到的时候 session 会到数据库查询）
+
+        roles = db.query(Role).all()  # roles: 所有角色对象组成的list
+        for role in roles:
+            for user in role.users:  # role.users: 以该角色作为第一角色的 用户对象组成的list
+                print '\n用户: {0} ---> 第一角色: {1}\n'.format(user.name, role.name)
+
+            for user in role.second_users:
+                print '\n用户: {0} ---> 第二角色: {1}\n'.format(user.name, role.name)
+
+        users = db.query(User).all()  # users: 所有用户对象组成的list
+        for user in users:
+
+            print user.role_id  # 关联的第一角色的id
+            print user.role  # 关联的第一角色对象，一个Role类的实例对象
+            print user.Role_users
+            assert user.role == user.Role_users
+
+            print user.second_role_id  # => 2
+            print user.second_role  # => <__main__.Role at 0x10ecdac50>
+            print user.Role_second_users
+            assert user.second_role == user.Role_second_users
+
+            print dir(user)
+
+        roles = db.query(Role).all()
+        for role in roles:
+            print role.users  # => [<__main__.User at 0x10ecda550>]
+            print role.User_role_id  # => [<__main__.User at 0x10ecda550>]
+            assert role.users == role.User_role_id
+
+            print role.second_users
+            print role.User_second_role_id
+            assert role.second_users == role.User_second_role_id

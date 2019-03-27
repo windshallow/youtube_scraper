@@ -23,7 +23,7 @@ SQLALCHEMY_DATABASE_URI = 'postgresql://:@127.0.0.1:5432/learn'
 DB_CONNECT_STRING = SQLALCHEMY_DATABASE_URI
 
 # 创建数据库引擎
-engine = create_engine(DB_CONNECT_STRING, echo=True)  # echo为True, 会打印所有的sql语句
+engine = create_engine(DB_CONNECT_STRING, echo=False)  # echo为True, 会打印所有的sql语句
 
 
 if __name__ == "__main__":

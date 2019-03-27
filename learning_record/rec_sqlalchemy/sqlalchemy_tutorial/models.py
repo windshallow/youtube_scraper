@@ -30,18 +30,18 @@ from sqlalchemy import Column, Integer, String
 Base = declarative_base()  # sqlalchemy 的  所有模型类  继承自一个由 declarative_base() 方法生成的类。
 
 
-class User(Base):
-    """用户表"""
-
-    __tablename__ = 'User'
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
-    name = Column('name', String(50))
-    age = Column(Integer)  # age = Column('age', Integer) 效果一样
-
-
-class Role(Base):
-    """角色表"""
-
-    __tablename__ = 'Role'
-    id = Column('id', Integer, primary_key=True, autoincrement=True)
-    name = Column('name', String(50))
+# class User(Base):
+#     """用户表"""
+#
+#     __tablename__ = 'User'
+#     id = Column('id', Integer, primary_key=True, autoincrement=True)
+#     name = Column('name', String(50))
+#     age = Column(Integer)  # age = Column('age', Integer) 效果一样
+#
+#
+# class Role(Base):
+#     """角色表"""
+#
+#     __tablename__ = 'Role'
+#     id = Column('id', Integer, primary_key=True, autoincrement=True)
+#     name = Column('name', String(50))
