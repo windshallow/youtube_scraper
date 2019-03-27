@@ -41,4 +41,63 @@ alembic 实现了类似 git/svn 的版本管理的控制，我们可以通过 al
 
     其他参数可以参见官网说明：http://alembic.zzzcomputing.com/en/latest/tutorial.html
 
+4. 创建数据库版本
+
+    4.1 接下来我们创建一个数据库版本，并新建两个表:
+
+        $ alembic revision -m 'create table'
+
+        创建一个版本（ 生成 yourproject/migrations/versions/xxx_create_table.py ），
+        该 python 模块包含 upgrade 和 downgrade 两个方法，在这里添加一些新增表的逻辑 (如下代码)。
+
+
+    4.2 这里生成的文件名是依照在 alembic.ini 文件声明的模板来的，默认为: 版本号+名字，
+        可以加上一些日期信息，否则不好排序:
+
+            file_template = %%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d_%%(minute).2d_%%(rev)s_%%(slug)s
+
+    4.3 另外通常我们也改一下生成模板 script.py.mako ，加上编码信息，否则在升级脚本中如果有中文会报错。
+
+        #!/usr/bin/python
+        # -*- coding:utf-8 -*-
+
 """
+
+# """create table
+#
+# Revision ID: 4fd533a56b34
+# Revises:
+# Create Date: 2016-09-18 17:20:27.667100
+#
+# """
+
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision = '4fd533a56b34'
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    # 添加表
+    op.create_table(
+        'account',
+        sa.Column('id', sa.Integer, primary_key=True),
+        sa.Column('name', sa.String(50), nullable=False),
+        sa.Column('description', sa.Unicode(200)),
+    )
+
+    # 添加列
+    # op.add_column('account', sa.Column('last_transaction_date', sa.DateTime))
+
+
+def downgrade():
+    # 删除表
+    op.drop_table('account')
+
+    # 删除列
+    # op.drop_column('account', 'last_transaction_date')
