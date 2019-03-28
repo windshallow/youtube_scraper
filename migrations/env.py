@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import with_statement
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -11,11 +13,24 @@ config = context.config
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 
+# ----------------------------------------------------------------------------------------------------------------------
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+
+# target_metadata = None  # 默认值
+
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "../youtube_scraper/")))
+
+from learning_record.rec_sqlalchemy.sqlalchemy_tutorial.models import Base
+from learning_record.rec_sqlalchemy.sqlalchemy_tutorial.S05_table_relationship import User, Role
+target_metadata = Base.metadata
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
