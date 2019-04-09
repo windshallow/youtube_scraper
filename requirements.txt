@@ -16,3 +16,4 @@ requests==2.19.1
 selenium==3.141.0
 
 marshmallow==2.15.6
+elasticsearch==6.3.1
