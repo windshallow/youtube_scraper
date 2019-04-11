@@ -6,7 +6,10 @@ from scrapy_spider.items import QuoteItem
 class QuotesSpiderSpider(scrapy.Spider):
 
     """
-    scrapy crawl quotes_spider -a url=http://quotes.toscrape.com/
+    $ scrapy crawl quotes_spider -a url=http://quotes.toscrape.com/ -s CLOSESPIDER_ITEMCOUNT=90
+
+    注解:
+        -s CLOSESPIDER_ITEMCOUNT=90 : item 个数为90个的时候终止爬虫。
     """
 
     name = 'quotes_spider'
@@ -14,7 +17,9 @@ class QuotesSpiderSpider(scrapy.Spider):
     # start_urls = ['http://quotes.toscrape.com/']
     custom_settings = {
         'ITEM_PIPELINES': {
-            'scrapy_spider.pipelines.ScrapySpiderPipeline': 300,
+            # 'scrapy_spider.pipelines.ScrapySpiderPipeline': 300,
+            # 'scrapy_spider.pipelines.es.EsWriterPipeline': 800,
+            'scrapy_spider.pipelines.es_2.EsWriterPipeline': 800,
         }
     }
 
@@ -25,17 +30,11 @@ class QuotesSpiderSpider(scrapy.Spider):
 
     def parse(self, response):
         quotes = response.xpath("//div[@class='quote']")
+
         for quote in quotes:
-            text = quote.xpath(
-                ".//span[@class='text']/text()").extract_first()
-            author = quote.xpath(
-                ".//small//text()").extract_first()
-
             item = QuoteItem()
-            item["quote"] = text
-            item["author"] = author
-            print author
-
+            item["quote"] = quote.xpath(".//span[@class='text']/text()").extract_first()
+            item["author"] = quote.xpath(".//small//text()").extract_first()
             yield item
 
         next_page_url = response.xpath("//li[@class='next']//a/@href").extract_first()

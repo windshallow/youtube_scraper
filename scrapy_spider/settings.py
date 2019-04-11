@@ -117,3 +117,5 @@ CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}".for
 )
 
 # ?charset=utf8
+
+ES_PIPELINE_URL = 'http://localhost:9200/properties/property'
