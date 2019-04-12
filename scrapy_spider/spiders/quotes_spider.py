@@ -19,7 +19,8 @@ class QuotesSpiderSpider(scrapy.Spider):
         'ITEM_PIPELINES': {
             # 'scrapy_spider.pipelines.ScrapySpiderPipeline': 300,
             # 'scrapy_spider.pipelines.es.EsWriterPipeline': 800,
-            'scrapy_spider.pipelines.es_2.EsWriterPipeline': 800,
+            # 'scrapy_spider.pipelines.es_2.EsWriterPipeline': 800,
+            'scrapy_spider.pipelines.psql.PostgreSQLWriterPipeline': 801,
         }
     }
 

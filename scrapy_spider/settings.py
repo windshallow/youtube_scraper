@@ -107,10 +107,10 @@ ITEM_PIPELINES = {
 # )
 
 # MacBook Pro
-CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}".format(
-    drivername="postgresql+psycopg2",  # postgres, mysql
+CONNECTION_STRING = "{driver_name}://{user}:{password}@{host}:{port}/{db_name}".format(
+    driver_name="postgresql+psycopg2",  # postgres, mysql
     user="linrenwei",
-    passwd="",
+    password="",
     host="localhost",
     port="5432",
     db_name="admin",
@@ -119,3 +119,13 @@ CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}".for
 # ?charset=utf8
 
 ES_PIPELINE_URL = 'http://localhost:9200/properties/property'
+
+# POSTGRESQL_PIPELINE_URL = 'postgresql://:@127.0.0.1:5432/admin'
+POSTGRESQL_PIPELINE_URL = "{driver_name}://{user}:{password}@{host}:{port}/{db_name}".format(
+    driver_name="postgresql",
+    user="",
+    password="",
+    host="localhost",
+    port="5432",
+    db_name="admin",
+)
