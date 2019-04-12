@@ -20,7 +20,8 @@ class QuotesSpiderSpider(scrapy.Spider):
             # 'scrapy_spider.pipelines.ScrapySpiderPipeline': 300,
             # 'scrapy_spider.pipelines.es.EsWriterPipeline': 800,
             # 'scrapy_spider.pipelines.es_2.EsWriterPipeline': 800,
-            'scrapy_spider.pipelines.psql.PostgreSQLWriterPipeline': 801,
+            # 'scrapy_spider.pipelines.psql.PostgreSQLWriterPipeline': 801,
+            'scrapy_spider.pipelines.orm_postgre.AddTablePipeline': 802,
         }
     }
 
