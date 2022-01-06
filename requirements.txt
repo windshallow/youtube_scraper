@@ -8,7 +8,7 @@ Automat==0.7.0
 backports.shutil-get-terminal-size==1.0.0
 billiard==3.5.0.4
 blinker==1.4
-celery==4.2.1
+celery==5.2.2
 certifi==2018.8.24
 cffi==1.11.5
 chardet==3.0.4
